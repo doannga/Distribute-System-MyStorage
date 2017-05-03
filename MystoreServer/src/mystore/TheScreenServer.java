@@ -209,7 +209,7 @@ public class TheScreenServer extends javax.swing.JFrame {
     private void bt_StartSynActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_bt_StartSynActionPerformed
         try {
             if (bt_ChooseFileSyn.getText().equals("Choose File to Synchronize")) {
-                File defaultFile = new File("C:\\server");
+                File defaultFile = new File("C:\\Users\\NgaPC\\Desktop\\server");
                 if (!defaultFile.exists()) {
                     // tạo file nếu không có
                     if (defaultFile.mkdir()) {
@@ -224,7 +224,7 @@ public class TheScreenServer extends javax.swing.JFrame {
                 // Nếu thư mục tồn tại, trả về địa chỉ ip của máy chủ RMI
                 System.getProperty("java.rmi.server.hostname", getIpServer());
                 System.out.println("" + getIpServer());
-                bt_ChooseFileSyn.setText("C:\\server");
+                bt_ChooseFileSyn.setText(defaultFile.getAbsolutePath());
                 // Cài đặt quản lý an ninh mạng
                 /*
                     RMISecurityManager implements a policy identical to the policy 
