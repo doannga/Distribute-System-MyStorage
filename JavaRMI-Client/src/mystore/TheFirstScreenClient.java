@@ -19,22 +19,23 @@ import java.util.Enumeration;
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
 
-
-
 /**
  *
- * @author NgaPC and  DemTran
+ * @author NgaPC and DemTran
  */
 public class TheFirstScreenClient extends javax.swing.JFrame {
+
     private JFileChooser fileChooser;
     private static Thread syncThread;
     private static boolean isDone = false;
     private static String rootFilePath;
     // server
-    private static  ServerInterface server;
+    private static ServerInterface server;
 
-	/** The client. */
-    private static  ClientInterface client;
+    /**
+     * The client.
+     */
+    private static ClientInterface client;
 
     /**
      * Creates new form TheFirstScreenClient
@@ -76,6 +77,7 @@ public class TheFirstScreenClient extends javax.swing.JFrame {
             .addGap(0, 0, Short.MAX_VALUE)
         );
 
+        tf_IPServer.setText("localhost");
         tf_IPServer.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 tf_IPServerActionPerformed(evt);
@@ -182,7 +184,7 @@ public class TheFirstScreenClient extends javax.swing.JFrame {
 
     }//GEN-LAST:event_bt_ChooseFileSynActionPerformed
 
-        // Hàm xác định địa chỉ IP máy chủ địa phương
+    // Hàm xác định địa chỉ IP máy chủ địa phương
     // thật ra chỗ này tớ cũng chưa hiểu lắm
     public static String getIp() {
         String ipAddress = null;
@@ -212,26 +214,28 @@ public class TheFirstScreenClient extends javax.swing.JFrame {
         }
         return ipAddress;
     }
-    private static  void connect() throws Exception{
-        
-        System.getProperty("java.rmi.server.hostname",getIp());
-        
-        
-        
+
+    private static void connect() throws Exception {
+
+        System.getProperty("java.rmi.server.hostname", getIp());
+
         // lấy địa chỉ url, vấn đề là do url ??? hay không đúng nhờ
         // cấu trúc của url là rmi://hostname/objectname
-        String url = "rmi://" + tf_IPServer.getText() + ":" + "3000"
-				+ "/" + "server";
-        
-         System.out.println(url);
+        //String url = "rmi://" + tf_IPServer.getText() + ":" + "3000"
+        //        + "/" + "server";
+        String url = "rmi://" + "localhost" + ":" + "3000"
+                + "/" + "server";
+
+        System.out.println(url);
         // sử dụng url để kết nối tới server, hàm này nó không kết nối được tới server không hiểu sai chỗ nào
-        server =  (ServerInterface) Naming.lookup(url);
-       
+        server = (ServerInterface) Naming.lookup(url);
+
         System.out.println("Connected");
-	client = new ClientImpl(InetAddress.getLocalHost());
-        
+        client = new ClientImpl(InetAddress.getLocalHost());
+
         //clockSync();  
     }
+
     // hàm clockSync tạm thời thiếu thư viện nên chưa dùng được
     private void clockSync() throws Exception {
 //		String serverIP = tf_IPServer.getText();
@@ -286,8 +290,8 @@ public class TheFirstScreenClient extends javax.swing.JFrame {
 //		System.out.println("Current time " + DateTimeUtils.currentTimeMillis());
 //
 //		socket.close();
-	}
-    
+    }
+
     private static void startSync() throws RemoteException {
         if (server.connect(client)) {
             File clientFile = new File(rootFilePath);
@@ -299,25 +303,41 @@ public class TheFirstScreenClient extends javax.swing.JFrame {
 
         }
     }
-    
+
     private void bt_ConnectActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_bt_ConnectActionPerformed
         // TODO add your handling code here:
-        try{
-            if(tf_IPServer.getText().equals("")){
+        try {
+            if (tf_IPServer.getText().equals("")) {
                 JOptionPane.showMessageDialog(bt_Connect, "bạn chưa nhập địa chỉ server", "lỗi kết nối", JOptionPane.ERROR_MESSAGE);
-            }else{
-            connect();           
-            TheMainScreenClient t=new TheMainScreenClient(fileChooser.getSelectedFile().getAbsolutePath(),client,server);
-            t.setVisible(true);
+            } else {
+                connect();
+                //String fileClientPath = fileChooser.getSelectedFile().getAbsolutePath();
+                String fileClientPath = "C:\\Users\\NgaPC\\Desktop\\client";
+                TheMainScreenClient t = new TheMainScreenClient(fileClientPath, client, server);
+                t.setVisible(true);
+                // auto sync before start
+                Synchronization sync = new Synchronization(false, new File(fileClientPath), server.getServerFile(), client, server);
+                Thread syncThread = new Thread(sync);
+                syncThread.start();
+                Synchronization.stopsync();
+
+                if (syncThread.isAlive()) {
+                    while (syncThread.isAlive()) {}
+                    try {
+                        syncThread.join();
+                    } catch (InterruptedException ex) {
+                        ex.printStackTrace();
+                    }
+                }
             }
+
             this.setVisible(false);
-            
-            
-        }catch (Exception e){
-            
+
+        } catch (Exception e) {
+
         }
-        
-        
+
+
     }//GEN-LAST:event_bt_ConnectActionPerformed
 
     private void tf_IPServerActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_tf_IPServerActionPerformed
