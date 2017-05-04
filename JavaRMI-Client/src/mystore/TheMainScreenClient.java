@@ -5,7 +5,6 @@
  */
 package mystore;
 
-import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -30,7 +29,7 @@ public class TheMainScreenClient extends javax.swing.JFrame {
     /**
      * Creates new form TheMainScreenClient
      */
-    private static boolean isDone = false;
+    private static final boolean IS_DONE = false;
     private String currentPath = null;
     private String currentFolder = null;
     private static String rootFilePath;
@@ -529,7 +528,7 @@ public class TheMainScreenClient extends javax.swing.JFrame {
         if (server.connect(client)) {
             File clientFile = new File(rootFilePath);
             File serverFile = server.getServerFile();
-            Synchronization sync = new Synchronization(isDone, clientFile, serverFile, client, server);
+            Synchronization sync = new Synchronization(IS_DONE, clientFile, serverFile, client, server);
 
             syncThread = new Thread(sync);
             syncThread.start();

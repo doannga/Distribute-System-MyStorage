@@ -6,15 +6,11 @@
 package mystore;
 
 import java.io.File;
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
 import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.rmi.Naming;
-import java.rmi.RemoteException;
-import java.text.DecimalFormat;
 import java.util.Enumeration;
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
@@ -26,9 +22,6 @@ import javax.swing.JOptionPane;
 public class TheFirstScreenClient extends javax.swing.JFrame {
 
     private JFileChooser fileChooser;
-    private static Thread syncThread;
-    private static boolean isDone = false;
-    private static String rootFilePath;
     // server
     private static ServerInterface server;
 
@@ -292,18 +285,6 @@ public class TheFirstScreenClient extends javax.swing.JFrame {
 //		socket.close();
     }
 
-    private static void startSync() throws RemoteException {
-        if (server.connect(client)) {
-            File clientFile = new File(rootFilePath);
-            File serverFile = server.getServerFile();
-            Synchronization sync = new Synchronization(isDone, clientFile, serverFile, client, server);
-
-            syncThread = new Thread(sync);
-            syncThread.start();
-
-        }
-    }
-
     private void bt_ConnectActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_bt_ConnectActionPerformed
         // TODO add your handling code here:
         try {
@@ -326,7 +307,7 @@ public class TheFirstScreenClient extends javax.swing.JFrame {
                     try {
                         syncThread.join();
                     } catch (InterruptedException ex) {
-                        ex.printStackTrace();
+                        System.out.println("error: " + ex.getMessage());
                     }
                 }
             }
@@ -360,22 +341,16 @@ public class TheFirstScreenClient extends javax.swing.JFrame {
                     break;
                 }
             }
-        } catch (ClassNotFoundException ex) {
-            java.util.logging.Logger.getLogger(TheFirstScreenClient.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (InstantiationException ex) {
-            java.util.logging.Logger.getLogger(TheFirstScreenClient.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (IllegalAccessException ex) {
-            java.util.logging.Logger.getLogger(TheFirstScreenClient.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (javax.swing.UnsupportedLookAndFeelException ex) {
+        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | javax.swing.UnsupportedLookAndFeelException ex) {
             java.util.logging.Logger.getLogger(TheFirstScreenClient.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         }
         //</editor-fold>
+        
+        //</editor-fold>
 
         /* Create and display the form */
-        java.awt.EventQueue.invokeLater(new Runnable() {
-            public void run() {
-                new TheFirstScreenClient().setVisible(true);
-            }
+        java.awt.EventQueue.invokeLater(() -> {
+            new TheFirstScreenClient().setVisible(true);
         });
     }
 

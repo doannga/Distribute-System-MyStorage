@@ -7,18 +7,13 @@ package mystore;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.nio.channels.FileChannel;
-import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  *
@@ -37,12 +32,12 @@ public class Synchronization implements Runnable {
 
     // khởi tạo hàm thôi 
     public Synchronization(boolean isDone, File clientFile, File serverFile, ClientInterface client, ServerInterface server) {
-        state = 0;
-        this.isDone = isDone;
-        this.clientFile = clientFile;
-        this.serverFile = serverFile;
-        this.client = client;
-        this.server = server;
+        Synchronization.state = 0;
+        Synchronization.isDone = isDone;
+        Synchronization.clientFile = clientFile;
+        Synchronization.serverFile = serverFile;
+        Synchronization.client = client;
+        Synchronization.server = server;
     }
 
     // hàm này dùng để xóa file có thể là không dùng vì khi đồng bộ nó sẽ xóa hết mất flie trước đó
@@ -67,20 +62,27 @@ public class Synchronization implements Runnable {
         OutputStream os = null;
         System.out.println("Copying : " + srcFile.getAbsolutePath() + " -> " + destFile.getAbsolutePath());
         try {
-            if (state == 1) {// thực hiện coppy file từ client to server 
-                is = new FileInputStream(srcFile);
-                os = server.getOutputStreamFile(destFile);// gửi file này tới server
-            } else if (state == 2) { // coppy file từ server to client
-                is = server.getInputStreamFile(srcFile);
-                os = new FileOutputStream(destFile);
-            } else {
-                // không làm gì vì 2 file ở client và server đã giống nhau
+            switch (state) {
+                case 1:
+                    // thực hiện coppy file từ client to server
+                    is = new FileInputStream(srcFile);
+                    os = server.getOutputStreamFile(destFile);// gửi file này tới server
+                    break;
+                case 2:
+                    // coppy file từ server to client
+                    is = server.getInputStreamFile(srcFile);
+                    os = new FileOutputStream(destFile);
+                    break;
+            // không làm gì vì 2 file ở client và server đã giống nhau
+                default:
+                    
+                    break;
             }
 //            is = new FileInputStream(srcFile);
 //            os = new FileOutputStream(destFile);
             //sử dụng mảng byte để đọc ghi dữ liệu. Chỗ này là tham khảo
             byte[] byteBuff = new byte[DEFAULT_SIZE];
-            int len = 0;
+            int len;
             while ((len = is.read(byteBuff)) >= 0) {
 //                os.write(byteBuff);
 //                os.flush();
@@ -137,7 +139,7 @@ public class Synchronization implements Runnable {
 
             String[] sources = src.list();// lưu các tên file của src
             String[] dest = des.list();// lưu các tên file của des
-            Set<String> srcNames = new HashSet<String>(Arrays.asList(sources));// lệnh này chưa hiểu nhưng nó dùng để delete
+            Set<String> srcNames = new HashSet<>(Arrays.asList(sources));// lệnh này chưa hiểu nhưng nó dùng để delete
             // xóa các file không phải là của nguồn
             for (String filename : dest) {
                 if (!srcNames.contains(filename)) {
@@ -149,6 +151,7 @@ public class Synchronization implements Runnable {
                 File srcFile = new File(src, filename);
                 File desFile = new File(des, filename);
                 synchronize(srcFile, desFile, smart, chunkSize);
+                des.setLastModified(src.lastModified());
             }
         } else {
             if (des.exists() && des.isDirectory()) {
@@ -210,11 +213,42 @@ public class Synchronization implements Runnable {
         Synchronization.server = server;
     }
 
-    private void checkxxx() {
-        long clientLM = clientFile.lastModified();
-        long serverLM = serverFile.lastModified();
-        long clientCount = clientFile.list().length;
-        long serverCount = serverFile.list().length;
+    private long getLastModified(File file) {
+        if (file.isDirectory()) {
+            long fileLM = file.lastModified();
+            File[] list = file.listFiles();
+
+            for (File subFile : list) {
+                long subFileLM = getLastModified(subFile);
+                if (subFileLM > fileLM) {
+                    fileLM = subFileLM;
+                }
+            }
+            return fileLM;
+        } else {
+            return file.lastModified();
+        }
+    }
+
+    private long getFileCount(File file) {
+        long sum = 0;
+        if (file.isDirectory()) {
+            File[] list = file.listFiles();
+            for (File subFile: list) {
+                long subFileCount = getFileCount(subFile);
+                sum += subFileCount;
+            }
+            return sum;
+        } else {
+            return 1;
+        }
+    }
+
+    private void check() {
+        long clientLM = getLastModified(clientFile);
+        long serverLM = getLastModified(serverFile);
+        long clientCount = getFileCount(clientFile);
+        long serverCount = getFileCount(serverFile);
         System.out.println("Info: \n"
                 + "length: " + clientCount + " - " + serverCount + "\n"
                 + "lastModified: " + clientLM + " - " + serverLM);
@@ -260,20 +294,22 @@ public class Synchronization implements Runnable {
 //                   // không làm gì cả
 //               }
                 // change logic check for synch
-                checkxxx();
-                if (state == 1) {
-                    synchronize(clientFile, serverFile, smart);
-                } else if (state == 2) {
-                    synchronize(serverFile, clientFile, smart);
-                } else {
-                    System.out.println("Nothing change");
+                check();
+                switch (state) {
+                    case 1:
+                        synchronize(clientFile, serverFile, smart);
+                        break;
+                    case 2:
+                        synchronize(serverFile, clientFile, smart);
+                        break;
+                    default:
+                        System.out.println("Nothing change");
+                        break;
                 }
                 client.setSynState(state);
                 //server.synState(client); // chưa implement
                 Thread.sleep(10000);
-                if (server.isStart()) {
-                    continue;
-                } else {
+                if (!server.isStart()) {
                     System.out.println("server đã ngừng hoạt động");
                     server.disConnect(client);
                     break;
@@ -282,7 +318,7 @@ public class Synchronization implements Runnable {
 
         } catch (Exception ex) {
             System.out.println("Something wrong in thread");
-            ex.printStackTrace();
+            System.out.println("error: " + ex.getMessage());
             isDone = true;
         }
         System.out.println("Thread Stoped");

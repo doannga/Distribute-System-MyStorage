@@ -16,7 +16,7 @@ import java.rmi.server.UnicastRemoteObject;
  */
 public class ClientImpl extends UnicastRemoteObject implements ClientInterface {
 
-    private InetAddress clientAddress;
+    private final InetAddress clientAddress;
     private String SynState;// trạng thái của đồng bộ hóa
     
     public ClientImpl(InetAddress clientAddress) throws RemoteException{
