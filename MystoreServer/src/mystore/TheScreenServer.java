@@ -6,7 +6,6 @@
 package mystore;
 
 import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.io.File;
 import java.net.Inet4Address;
 import java.net.InetAddress;
@@ -14,7 +13,6 @@ import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.rmi.RMISecurityManager;
 import java.util.Enumeration;
-import javax.swing.JButton;
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
 import javax.swing.JTextArea;
@@ -187,21 +185,18 @@ public class TheScreenServer extends javax.swing.JFrame {
     }//GEN-LAST:event_bt_ChooseFileSynActionPerformed
 
     private void bt_StopSynActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_bt_StopSynActionPerformed
-        bt_StopSyn.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                try {
-                    if (bt_StopSyn.getText().equalsIgnoreCase("Stop")) {
-                        server.stop();
-                        bt_StartSyn.setEnabled(true);
-                        bt_StopSyn.setEnabled(false);
-                        bt_StopSyn.setText("Stopped");
-                        bt_StartSyn.setText("Start");
-                        bt_ChooseFileSyn.setText("Choose File to Synchronize");
-                    }
-                } catch (Exception ex) {
-                    ex.printStackTrace();
+        bt_StopSyn.addActionListener((ActionEvent e) -> {
+            try {
+                if (bt_StopSyn.getText().equalsIgnoreCase("Stop")) {
+                    server.stop();
+                    bt_StartSyn.setEnabled(true);
+                    bt_StopSyn.setEnabled(false);
+                    bt_StopSyn.setText("Stopped");
+                    bt_StartSyn.setText("Start");
+                    bt_ChooseFileSyn.setText("Choose File to Synchronize");
                 }
+            } catch (Exception ex) {
+                System.out.println("error: " + ex.getMessage());
             }
         });
     }//GEN-LAST:event_bt_StopSynActionPerformed
@@ -254,7 +249,7 @@ public class TheScreenServer extends javax.swing.JFrame {
             bt_StartSyn.setEnabled(false);
             bt_StopSyn.setEnabled(true);
         } catch (Exception e) {
-            e.printStackTrace();
+            System.out.println("error: " + e.getMessage());
         }
     }//GEN-LAST:event_bt_StartSynActionPerformed
     // Hàm xác định địa chỉ IP máy chủ địa phương
@@ -304,22 +299,16 @@ public class TheScreenServer extends javax.swing.JFrame {
                     break;
                 }
             }
-        } catch (ClassNotFoundException ex) {
-            java.util.logging.Logger.getLogger(TheScreenServer.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (InstantiationException ex) {
-            java.util.logging.Logger.getLogger(TheScreenServer.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (IllegalAccessException ex) {
-            java.util.logging.Logger.getLogger(TheScreenServer.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (javax.swing.UnsupportedLookAndFeelException ex) {
+        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | javax.swing.UnsupportedLookAndFeelException ex) {
             java.util.logging.Logger.getLogger(TheScreenServer.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         }
         //</editor-fold>
+        
+        //</editor-fold>
 
         /* Create and display the form */
-        java.awt.EventQueue.invokeLater(new Runnable() {
-            public void run() {
-                new TheScreenServer().setVisible(true);
-            }
+        java.awt.EventQueue.invokeLater(() -> {
+            new TheScreenServer().setVisible(true);
         });
     }
 

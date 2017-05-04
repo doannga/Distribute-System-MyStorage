@@ -14,7 +14,6 @@ import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
 import javax.swing.JOptionPane;
-import javax.swing.JTextArea;
 
 import com.healthmarketscience.rmiio.SerializableInputStream;
 import com.healthmarketscience.rmiio.SerializableOutputStream;
