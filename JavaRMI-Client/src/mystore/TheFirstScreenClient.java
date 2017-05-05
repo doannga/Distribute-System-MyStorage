@@ -6,14 +6,18 @@
 package mystore;
 
 import java.io.File;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
 import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.rmi.Naming;
+import java.text.DecimalFormat;
 import java.util.Enumeration;
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
+import org.joda.time.DateTimeUtils;
 
 /**
  *
@@ -24,12 +28,10 @@ public class TheFirstScreenClient extends javax.swing.JFrame {
     private JFileChooser fileChooser;
     // server
     private static ServerInterface server;
-
     /**
      * The client.
      */
     private static ClientInterface client;
-
     /**
      * Creates new form TheFirstScreenClient
      */
@@ -226,63 +228,62 @@ public class TheFirstScreenClient extends javax.swing.JFrame {
         System.out.println("Connected");
         client = new ClientImpl(InetAddress.getLocalHost());
 
-        //clockSync();  
+        clockSync();  
     }
 
     // hàm clockSync tạm thời thiếu thư viện nên chưa dùng được
-    private void clockSync() throws Exception {
-//		String serverIP = tf_IPServer.getText();
-//
-//		// Send request
-//		DatagramSocket socket = new DatagramSocket();
-//		InetAddress address = InetAddress.getByName(serverIP);
-//		byte[] buf = new NtpMessage().toByteArray();
-//		DatagramPacket packet = new DatagramPacket(buf, buf.length, address,
-//				123);
-//
-//		// Set the transmit timestamp *just* before sending the packet
-//		// ToDo: Does this actually improve performance or not?
-//		NtpMessage.encodeTimestamp(packet.getData(), 40,
-//				(System.currentTimeMillis() / 1000.0) + 2208988800.0);
-//
-//		socket.send(packet);
-//
-//		// Get response
-//		System.out.println("NTP request sent, waiting for response...\n");
-//		packet = new DatagramPacket(buf, buf.length);
-//		socket.receive(packet);
-//
-//		// Immediately record the incoming timestamp
-//		double destinationTimestamp = (System.currentTimeMillis() / 1000.0) + 2208988800.0;
-//
-//		// Process response
-//		NtpMessage msg = new NtpMessage(packet.getData());
-//
-//		// Corrected, according to RFC2030 errata
-//		double roundTripDelay = (destinationTimestamp - msg.originateTimestamp)
-//				- (msg.transmitTimestamp - msg.receiveTimestamp);
-//
-//		double localClockOffset = ((msg.receiveTimestamp - msg.originateTimestamp) + (msg.transmitTimestamp - destinationTimestamp)) / 2;
-//
-//		// Display response
-//		System.out.println("NTP server: " + serverIP);
-//		System.out.println(msg.toString());
-//
-//		System.out.println("Dest. timestamp:     "
-//				+ NtpMessage.timestampToString(destinationTimestamp));
-//
-//		System.out.println("Round-trip delay: "
-//				+ new DecimalFormat("0.00").format(roundTripDelay * 1000)
-//				+ " ms");
-//
-//		System.out.println("Local clock offset: "
-//				+ new DecimalFormat("0.00").format(localClockOffset * 1000)
-//				+ " ms");
-//		System.out.println("Current time " + DateTimeUtils.currentTimeMillis());
-//		DateTimeUtils.setCurrentMillisOffset((long) (localClockOffset * 1000));
-//		System.out.println("Current time " + DateTimeUtils.currentTimeMillis());
-//
-//		socket.close();
+    private static void clockSync() throws Exception {
+		String serverIP = tf_IPServer.getText();
+		// Send request
+		DatagramSocket socket = new DatagramSocket();
+		InetAddress address = InetAddress.getByName(serverIP);
+		byte[] buf = new NtpMessage().toByteArray();
+		DatagramPacket packet = new DatagramPacket(buf, buf.length, address,
+				123);
+
+		// Set the transmit timestamp *just* before sending the packet
+		// ToDo: Does this actually improve performance or not?
+		NtpMessage.encodeTimestamp(packet.getData(), 40,
+				(System.currentTimeMillis() / 1000.0) + 2208988800.0);
+
+		socket.send(packet);
+
+		// Get response
+		System.out.println("NTP request sent, waiting for response...\n");
+		packet = new DatagramPacket(buf, buf.length);
+		socket.receive(packet);
+
+		// Immediately record the incoming timestamp
+		double destinationTimestamp = (System.currentTimeMillis() / 1000.0) + 2208988800.0;
+
+		// Process response
+		NtpMessage msg = new NtpMessage(packet.getData());
+
+		// Corrected, according to RFC2030 errata
+		double roundTripDelay = (destinationTimestamp - msg.originateTimestamp)
+				- (msg.transmitTimestamp - msg.receiveTimestamp);
+
+		double localClockOffset = ((msg.receiveTimestamp - msg.originateTimestamp) + (msg.transmitTimestamp - destinationTimestamp)) / 2;
+
+		// Display response
+		System.out.println("NTP server: " + serverIP);
+		System.out.println(msg.toString());
+
+		System.out.println("Dest. timestamp:     "
+				+ NtpMessage.timestampToString(destinationTimestamp));
+
+		System.out.println("Round-trip delay: "
+				+ new DecimalFormat("0.00").format(roundTripDelay * 1000)
+				+ " ms");
+
+		System.out.println("Local clock offset: "
+				+ new DecimalFormat("0.00").format(localClockOffset * 1000)
+				+ " ms");
+		System.out.println("Current time " + DateTimeUtils.currentTimeMillis());
+		DateTimeUtils.setCurrentMillisOffset((long) (localClockOffset * 1000));
+		System.out.println("Current time " + DateTimeUtils.currentTimeMillis());
+
+		socket.close();
     }
 
     private void bt_ConnectActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_bt_ConnectActionPerformed
@@ -296,29 +297,14 @@ public class TheFirstScreenClient extends javax.swing.JFrame {
                 String fileClientPath = "C:\\Users\\NgaPC\\Desktop\\client";
                 TheMainScreenClient t = new TheMainScreenClient(fileClientPath, client, server);
                 t.setVisible(true);
-                // auto sync before start
-                Synchronization sync = new Synchronization(false, new File(fileClientPath), server.getServerFile(), client, server);
-                Thread syncThread = new Thread(sync);
-                syncThread.start();
-                Synchronization.stopsync();
-
-                if (syncThread.isAlive()) {
-                    while (syncThread.isAlive()) {}
-                    try {
-                        syncThread.join();
-                    } catch (InterruptedException ex) {
-                        System.out.println("error: " + ex.getMessage());
-                    }
-                }
+                
             }
-
+            
             this.setVisible(false);
 
         } catch (Exception e) {
 
         }
-
-
     }//GEN-LAST:event_bt_ConnectActionPerformed
 
     private void tf_IPServerActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_tf_IPServerActionPerformed
