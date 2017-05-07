@@ -12,17 +12,14 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.rmi.server.RemoteServer;
+import java.rmi.server.ServerNotActiveException;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 import javax.swing.JTextArea;
 import org.joda.time.DateTimeUtils;
 
-/**
- *
- * @author DemTran chứa các phương thức và cách thức dồng bộ hóa
- *
- */
 public class Synchronization implements Runnable {
 
     static final int DEFAULT_SIZE = 16 * 1024 * 1024;
@@ -35,7 +32,7 @@ public class Synchronization implements Runnable {
     private static String rootFilePath;
     static File scrFile;
     static File destFile;
-    // khởi tạo hàm thôi 
+
     public Synchronization(boolean isDone, File clientFile, File serverFile, ClientInterface client, ServerInterface server) {
         Synchronization.state = 0;
         Synchronization.isDone = isDone;
@@ -44,9 +41,7 @@ public class Synchronization implements Runnable {
         Synchronization.client = client;
         Synchronization.server = server;
     }
-
-    // hàm này dùng để xóa file có thể là không dùng vì khi đồng bộ nó sẽ xóa hết mất flie trước đó
-    // coppy code này trên mạng thật là vui 
+ 
     public static void delete(File file) {
         if (file.isDirectory()) {
             for (File subfile : file.listFiles()) {
@@ -59,6 +54,13 @@ public class Synchronization implements Runnable {
             }
         }
     }
+    public static void stopsync() {
+        DateTimeUtils.setCurrentMillisSystem();
+        toLog("Current time" + DateTimeUtils.currentTimeMillis());
+        toLog("Stop synchronizing...");
+        isDone = true;
+    }
+    
     public static void copyFile(File srcFile, File destFile, long chunksize) throws Exception {
         InputStream is = null;
         OutputStream os = null;
@@ -75,7 +77,7 @@ public class Synchronization implements Runnable {
                     is = server.getInputStreamFile(srcFile);
                     os = new FileOutputStream(destFile);
                     break;
-                // không làm gì vì 2 file ở client và server đã giống nhau
+                    // không làm gì vì 2 file ở client và server đã giống nhau
                 default:
 
                     break;
@@ -86,8 +88,7 @@ public class Synchronization implements Runnable {
             while ((len = is.read(byteBuff)) >= 0) {
                 os.flush();
                 os.write(byteBuff, 0, len);
-
-            }       
+            }
         } finally {
             if (is != null) {
                 is.close();
@@ -96,18 +97,17 @@ public class Synchronization implements Runnable {
                 os.close();
             }
         }
-
         toLog("Copy Done");
         boolean successTimestamp = destFile.setLastModified(srcFile.lastModified());
         if (!successTimestamp) {
             toLog(" không thể thay đổi dấu thời gian do đồng bộ hóa có vấn đề" + destFile);
         }
-
     }
 
     public static void synchronize(File src, File des, boolean smart) throws Exception {
         synchronize(src, des, smart, DEFAULT_SIZE);
     }
+
     // function synchronize.
     public static void synchronize(File src, File des, boolean smart, long chunkSize) throws Exception {
         if (chunkSize <= 0) {
@@ -147,6 +147,109 @@ public class Synchronization implements Runnable {
             }
             copyFile(src, des, chunkSize);
         }
+    }
+
+    // the last modified file
+    private long getLastModified(File file) {
+        if (file.isDirectory()) {
+            long fileLM = file.lastModified();
+            File[] list = file.listFiles();
+
+            for (File subFile : list) {
+                long subFileLM = getLastModified(subFile);
+                if (subFileLM > fileLM) {
+                    fileLM = subFileLM;
+                }
+            }
+            return fileLM;
+        } else {
+            return file.lastModified();
+        }
+    }
+
+    private long getFileCount(File file) {
+        long sum = 0;
+        if (file.isDirectory()) {
+            File[] list = file.listFiles();
+            for (File subFile : list) {
+                long subFileCount = getFileCount(subFile);
+                sum += subFileCount;
+            }
+            return sum;
+        } else {
+            return 1;
+        }
+    }
+
+    // function check condition to synchronize
+    private void check() {
+        long clientLM = getLastModified(clientFile);
+        long serverLM = getLastModified(serverFile);
+        long clientCount = getFileCount(clientFile);
+        long serverCount = getFileCount(serverFile);
+        toLog("Info: \n"
+                + "length: " + clientCount + " - " + serverCount + "\n"
+                + "lastModified: " + clientLM + " - " + serverLM);
+        if (clientLM > serverLM && clientCount > serverCount) {
+            // sync from client to server
+            state = 1;
+            toLog("xxx");
+        } else if (serverLM > clientLM && serverCount > clientCount) {
+            // sync from server to client
+            state = 2;
+        } else // same last modified
+        // check for count files
+         if (clientCount > serverCount) {
+                // client more files than server
+                // sync: client -> server
+                state = 1;
+            } else if (serverCount > clientCount) {
+                // sync: server -> client
+                state = 2;
+            } else {
+                state = 0;
+                // Nothing change
+                // do whaterver you want
+            }
+    }
+
+    private static void toLog(String text) {
+        TheMainScreenClient.tAre_show.append(text + "\n");
+    }
+
+    @Override
+    public void run() {
+        boolean smart = true;
+        try {
+            while (!isDone) {
+                // change logic check for synch
+                check();
+                switch (state) {
+                    case 1:
+                        synchronize(clientFile, serverFile, smart);
+                        break;
+                    case 2:
+                        synchronize(serverFile, clientFile, smart);
+                        break;
+                    default:
+                        toLog("Nothing change");
+                        break;
+                }
+                client.setSynState(state);
+                Thread.sleep(10000);
+                if (!server.isStart()) {
+                    toLog("server đã ngừng hoạt động");
+                    server.disConnect(client);
+                    break;
+                }
+            }
+
+        } catch (Exception ex) {
+            toLog("Something wrong in thread");
+            toLog("error: " + ex.getMessage());
+            isDone = true;
+        }
+        toLog("Thread is Stoped");
     }
 
     public static int getDefault_size() {
@@ -199,114 +302,5 @@ public class Synchronization implements Runnable {
 
     public static void setServer(ServerInterface server) {
         Synchronization.server = server;
-    }
-    // the last modified file
-    private long getLastModified(File file) {
-        if (file.isDirectory()) {
-            long fileLM = file.lastModified();
-            File[] list = file.listFiles();
-
-            for (File subFile : list) {
-                long subFileLM = getLastModified(subFile);
-                if (subFileLM > fileLM) {
-                    fileLM = subFileLM;
-                }
-            }
-            return fileLM;
-        } else {
-            return file.lastModified();
-        }
-    }
-
-    private long getFileCount(File file) {
-        long sum = 0;
-        if (file.isDirectory()) {
-            File[] list = file.listFiles();
-            for (File subFile : list) {
-                long subFileCount = getFileCount(subFile);
-                sum += subFileCount;
-            }
-            return sum;
-        } else {
-            return 1;
-        }
-    }
-    // function check condition to synchronize
-    private void check() {
-        long clientLM = getLastModified(clientFile);
-        long serverLM = getLastModified(serverFile);
-        long clientCount = getFileCount(clientFile);
-        long serverCount = getFileCount(serverFile);
-        toLog("Info: \n"
-                + "length: " + clientCount + " - " + serverCount + "\n"
-                + "lastModified: " + clientLM + " - " + serverLM);
-        if (clientLM > serverLM && clientCount > serverCount) {
-            // sync from client to server
-            state = 1;
-            toLog("xxx");
-        } else if (serverLM > clientLM && serverCount > clientCount) {
-            // sync from server to client
-            state = 2;
-        } else 
-        // same last modified
-        // check for count files
-        {
-            if (clientCount > serverCount) {
-                // client more files than server
-                // sync: client -> server
-                state = 1;
-            } else if (serverCount > clientCount) {
-                // sync: server -> client
-                state = 2;//từ client đến server
-            } else {
-                state = 0;
-                // Nothing change
-                // do whaterver you want
-            }
-        }
-    }
-    private static void toLog(String text) {
-        TheMainScreenClient.tAre_show.append(text + "\n");
-    }
-    @Override
-    public void run() {
-        boolean smart = true;
-        try {
-            while (!isDone) {
-                // change logic check for synch
-                check();
-                switch (state) {
-                    case 1:
-                        synchronize(clientFile, serverFile, smart);
-                        break;
-                    case 2:
-                        synchronize(serverFile, clientFile, smart);
-                        break;
-                    default:
-                        toLog("Nothing change");
-                        break;
-                }
-                client.setSynState(state);
-                Thread.sleep(10000);
-                if (!server.isStart()) {
-                    toLog("server đã ngừng hoạt động");
-                    server.disConnect(client);
-                    break;
-                }
-            }
-
-        } catch (Exception ex) {
-            toLog("Something wrong in thread");
-            toLog("error: " + ex.getMessage());
-            isDone = true;
-        }
-        toLog("Thread is Stoped");
-    }
-
-    public static void stopsync() {
-        DateTimeUtils.setCurrentMillisSystem();
-        toLog("Current time" + DateTimeUtils.currentTimeMillis());
-        toLog("Stop synchronizing...");
-        isDone = true;
     }
 }

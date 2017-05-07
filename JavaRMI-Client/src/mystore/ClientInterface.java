@@ -9,11 +9,6 @@ import java.net.InetAddress;
 import java.rmi.Remote;
 import java.rmi.RemoteException;
 
-/**
- *
- * @author DemTran and Nga Đoàn
- * đây là viết java RMI nên ta phải tạo ra 1 interface tại java không thể hỗ trợ đa kế thừa
- */
 public interface ClientInterface extends Remote {
     
     

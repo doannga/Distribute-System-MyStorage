@@ -31,10 +31,10 @@ public class ClientImpl extends UnicastRemoteObject implements ClientInterface {
 // dưới đây để thay đổi hàm trạng thái đồng bộ hóa
     @Override
     public void setSynState(int state) throws RemoteException {
-        if(state == 0){
+        if(state == 1){
             SynState = "Upload from "+ getAdress()+" to Server";
         }
-        if(state == 1){
+        if(state == 2){
             SynState = "Download from Server to "+getAdress();
         }
         else{

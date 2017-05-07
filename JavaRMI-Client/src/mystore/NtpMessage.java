@@ -332,7 +332,6 @@ public class NtpMessage {
 			r += unsignedByteToShort(array[pointer + i])
 					* Math.pow(2, (3 - i) * 8);
 		}
-
 		return r;
 	}
 

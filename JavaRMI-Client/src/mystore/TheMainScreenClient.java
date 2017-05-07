@@ -44,6 +44,7 @@ public class TheMainScreenClient extends javax.swing.JFrame {
     private static ClientInterface client;
     private static ServerInterface server;
     private static Thread syncThread;
+    private Synchronization syn;
 
     public TheMainScreenClient(String rootFilePath1, ClientInterface client, ServerInterface server) {
         rootFilePath = rootFilePath1;
@@ -56,7 +57,7 @@ public class TheMainScreenClient extends javax.swing.JFrame {
         tAre_show.append(rootFilePath1 + "\n");
         currentPath = rootFilePath1;
         currentFolder = getParentFolder(currentPath);
-        lb_currentPath.setText(currentPath);
+        lb_currentPath.setText("Current Path: " + currentPath);
         syncThread = null;
         loadFolder(tb_folder, currentPath);
         loadFile(tb_file, currentPath);
@@ -66,13 +67,25 @@ public class TheMainScreenClient extends javax.swing.JFrame {
             public void run() {
                 try {
                     startSync();
+                    if(Synchronization.state == 2){
+                    synchronized(TheMainScreenClient.client){
+                        TheMainScreenClient.client.wait();
+                    }
+                    }
+                else{
+                    synchronized(TheMainScreenClient.client){
+                        TheMainScreenClient.client.notify();
+                    }
+                    }                 
                     stopSync();
                 } catch (RemoteException ex) {
+                    Logger.getLogger(TheMainScreenClient.class.getName()).log(Level.SEVERE, null, ex);
+                } catch (InterruptedException ex) {
                     Logger.getLogger(TheMainScreenClient.class.getName()).log(Level.SEVERE, null, ex);
                 }
             }
         })).start();
-        
+
     }
 
     /**
@@ -367,7 +380,7 @@ public class TheMainScreenClient extends javax.swing.JFrame {
                     String filePath = x.getSelectedFile().getPath();
                     File f1 = new File(filePath);
                     File f2 = new File(currentPath, fileName);
-                    tAre_show.append(currentPath + '\n');
+                    tAre_show.append("Current Path: " + currentPath + '\n');
                     // xác định đầu ra và đầu vào  để còn coppy
                     is = new FileInputStream(f1);
                     os = new FileOutputStream(f2);
@@ -551,7 +564,6 @@ public class TheMainScreenClient extends javax.swing.JFrame {
 
         }
     }
-// hàm này không hiểu nó làm kiểu gì luôn coppy nguyên
 
     public String getParentFolder(String currentPath) {
 
@@ -589,24 +601,23 @@ public class TheMainScreenClient extends javax.swing.JFrame {
         return false;
     }
 
-    // hàm này cũng không hiểu lắm
-    public String getPath(String currentPath) {
-        int endIndex = 0;
-        for (int i = currentPath.length() - 1; i >= 0; i--) {
-            if ((int) currentPath.charAt(i) == 92) {// dau /
-                endIndex = i;
-                break;
-            }
-        }
-        if ((int) currentPath.charAt(endIndex - 1) == 58) {// dau :
-            String checkPath = currentPath.substring(0, endIndex + 1);
-            return checkPath;
-        } else {
-            String checkPath = currentPath.substring(0, endIndex);
-            return checkPath;
-        }
-
-    }
+//    public String getPath(String currentPath) {
+//        int endIndex = 0;
+//        for (int i = currentPath.length() - 1; i >= 0; i--) {
+//            if ((int) currentPath.charAt(i) == 92) {
+//                endIndex = i;
+//                break;
+//            }
+//        }
+//        if ((int) currentPath.charAt(endIndex - 1) == 58) {
+//            String checkPath = currentPath.substring(0, endIndex + 1);
+//            return checkPath;
+//        } else {
+//            String checkPath = currentPath.substring(0, endIndex);
+//            return checkPath;
+//        }
+//
+//    }
 
     /**
      * @param args the command line arguments
