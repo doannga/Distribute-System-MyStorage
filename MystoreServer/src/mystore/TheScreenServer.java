@@ -11,7 +11,6 @@ import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
-import java.rmi.RMISecurityManager;
 import java.util.Enumeration;
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
@@ -215,7 +214,7 @@ public class TheScreenServer extends javax.swing.JFrame {
                 
                  */
                 if (System.getSecurityManager() == null) {
-                    System.setSecurityManager(new RMISecurityManager());
+                    System.setSecurityManager(new SecurityManager());
                 }
                 server = new ServerImpl(defaultFile);
             } else {
@@ -223,7 +222,7 @@ public class TheScreenServer extends javax.swing.JFrame {
                 // Kiểm tra địa chỉ
                 System.getProperty("java.rmi.server.hostname", getIpServer());
                 if (System.getSecurityManager() == null) {
-                    System.setSecurityManager(new RMISecurityManager());
+                    System.setSecurityManager(new SecurityManager());
                 }
                 server = new ServerImpl(fileChooser.getSelectedFile());
             }
