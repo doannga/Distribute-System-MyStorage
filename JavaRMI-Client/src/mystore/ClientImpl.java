@@ -17,7 +17,7 @@ import java.rmi.server.UnicastRemoteObject;
 public class ClientImpl extends UnicastRemoteObject implements ClientInterface {
 
     private final InetAddress clientAddress;
-    private String SynState;// trạng thái của đồng bộ hóa
+    private int state;// trạng thái của đồng bộ hóa
     
     public ClientImpl(InetAddress clientAddress) throws RemoteException{
         super();
@@ -28,23 +28,15 @@ public class ClientImpl extends UnicastRemoteObject implements ClientInterface {
     public InetAddress getAdress() throws RemoteException {
         return clientAddress;
     }
-// dưới đây để thay đổi hàm trạng thái đồng bộ hóa
+
     @Override
     public void setSynState(int state) throws RemoteException {
-        if(state == 1){
-            SynState = "Upload from "+ getAdress()+" to Server";
-        }
-        if(state == 2){
-            SynState = "Download from Server to "+getAdress();
-        }
-        else{
-            SynState = " Server and "+getAdress()+" is synchronized.";
-        }
+        this.state = state;
     }
-// lấy ra trạng thái đồng bộ
+
     @Override
     public String getSynState() throws RemoteException {
-        return SynState;
+        return this.state + "";
     }
-    
+
 }

@@ -185,6 +185,7 @@ public class NtpMessage {
 
 	/**
 	 * Constructs a new NtpMessage from an array of bytes.
+     * @param array
 	 */
 	public NtpMessage(byte[] array) {
 		// See the packet format diagram in RFC 2030 for details
@@ -228,6 +229,7 @@ public class NtpMessage {
 
 	/**
 	 * This method constructs the data bytes of a raw NTP packet.
+     * @return 
 	 */
 	public byte[] toByteArray() {
 		// All bytes are automatically set to 0
@@ -268,7 +270,9 @@ public class NtpMessage {
 
 	/**
 	 * Returns a string representation of a NtpMessage
+     * @return 
 	 */
+        @Override
 	public String toString() {
 		String precisionStr = new DecimalFormat("0.#E0").format(Math.pow(2,
 				precision));
@@ -313,6 +317,8 @@ public class NtpMessage {
 	/**
 	 * Converts an unsigned byte to a short. By default, Java assumes that a
 	 * byte is signed.
+     * @param b
+     * @return 
 	 */
 	public static short unsignedByteToShort(byte b) {
 		if ((b & 0x80) == 0x80)
@@ -324,6 +330,9 @@ public class NtpMessage {
 	/**
 	 * Will read 8 bytes of a message beginning at <code>pointer</code> and
 	 * return it as a double, according to the NTP 64-bit timestamp format.
+     * @param array
+     * @param pointer
+     * @return 
 	 */
 	public static double decodeTimestamp(byte[] array, int pointer) {
 		double r = 0.0;
@@ -337,6 +346,9 @@ public class NtpMessage {
 
 	/**
 	 * Encodes a timestamp in the specified position in the message
+     * @param array
+     * @param pointer
+     * @param timestamp
 	 */
 	public static void encodeTimestamp(byte[] array, int pointer,
 			double timestamp) {
@@ -363,8 +375,11 @@ public class NtpMessage {
 	/**
 	 * Returns a timestamp (number of seconds since 00:00 1-Jan-1900) as a
 	 * formatted date/time string.
+     * @param timestamp
+     * @return 
 	 */
 	public static String timestampToString(double timestamp) {
+                
 		if (timestamp == 0)
 			return "0";
 
@@ -383,12 +398,16 @@ public class NtpMessage {
 		double fraction = timestamp - ((long) timestamp);
 		String fractionSting = new DecimalFormat(".000000").format(fraction);
 
-		return date + fractionSting;
+		return ""+date + fractionSting;
 	}
 
 	/**
 	 * Returns a string representation of a reference identifier according to
 	 * the rules set out in RFC 2030.
+     * @param ref
+     * @param stratum
+     * @param version
+     * @return 
 	 */
 	public static String referenceIdentifierToString(byte[] ref, short stratum,
 			byte version) {
@@ -417,7 +436,6 @@ public class NtpMessage {
 							+ (unsignedByteToShort(ref[1]) / 65536.0)
 							+ (unsignedByteToShort(ref[2]) / 16777216.0) + (unsignedByteToShort(ref[3]) / 4294967296.0));
 		}
-
 		return "";
 	}
 }

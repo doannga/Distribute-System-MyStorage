@@ -5,9 +5,6 @@
  */
 package mystore;
 
-import java.awt.event.HierarchyEvent;
-import java.awt.event.HierarchyListener;
-import java.awt.event.InputMethodEvent;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -20,10 +17,10 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
-import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.JTextArea;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.text.DefaultCaret;
 
 /**
  *
@@ -34,58 +31,48 @@ public class TheMainScreenClient extends javax.swing.JFrame {
     /**
      * Creates new form TheMainScreenClient
      */
-    private static final boolean IS_DONE = false;
-    private String currentPath = null;
-    private String currentFolder = null;
-    private static String rootFilePath;
-    public static String syncState;
+    private final boolean IS_DONE = false;
+    private String currentPath;
+    public String syncState;
     private InputStream is = null;
     private OutputStream os = null;
-    private static ClientInterface client;
-    private static ServerInterface server;
-    private static Thread syncThread;
-    private Synchronization syn;
+    private ClientInterface client;
+    private ServerInterface server;
+    private Thread syncThread;
+    private Synchronization sync;
 
     public TheMainScreenClient(String rootFilePath1, ClientInterface client, ServerInterface server) {
-        rootFilePath = rootFilePath1;
-        TheMainScreenClient.client = client;
-        TheMainScreenClient.server = server;
+        this.client = client;
+        this.server = server;
+
         initComponents();
+
         tAre_show.append("Connected...\n");
         loadFile(tb_file, rootFilePath1);
         loadFolder(tb_folder, rootFilePath1);
         tAre_show.append(rootFilePath1 + "\n");
+
         currentPath = rootFilePath1;
-        currentFolder = getParentFolder(currentPath);
         lb_currentPath.setText("Current Path: " + currentPath);
+
         syncThread = null;
-        loadFolder(tb_folder, currentPath);
-        loadFile(tb_file, currentPath);
+        sync = null;
+
         tAre_show.update(tAre_show.getGraphics());
+        DefaultCaret caret = (DefaultCaret) tAre_show.getCaret();
+        caret.setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);
+
         (new Thread(new Runnable() {
             @Override
             public void run() {
                 try {
                     startSync();
-                    if(Synchronization.state == 2){
-                    synchronized(TheMainScreenClient.client){
-                        TheMainScreenClient.client.wait();
-                    }
-                    }
-                else{
-                    synchronized(TheMainScreenClient.client){
-                        TheMainScreenClient.client.notify();
-                    }
-                    }                 
                     stopSync();
                 } catch (RemoteException ex) {
-                    Logger.getLogger(TheMainScreenClient.class.getName()).log(Level.SEVERE, null, ex);
-                } catch (InterruptedException ex) {
-                    Logger.getLogger(TheMainScreenClient.class.getName()).log(Level.SEVERE, null, ex);
+                    tAre_show.append("Error auto synchronize!\n" + ex.getMessage());
                 }
             }
         })).start();
-
     }
 
     /**
@@ -116,6 +103,7 @@ public class TheMainScreenClient extends javax.swing.JFrame {
         jPanel4 = new javax.swing.JPanel();
         bt_Syn = new javax.swing.JButton();
         bt_delete = new javax.swing.JButton();
+        btn_Disconnect = new javax.swing.JButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
@@ -249,21 +237,20 @@ public class TheMainScreenClient extends javax.swing.JFrame {
                 .addGap(40, 40, 40)
                 .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
                     .addComponent(jScrollPane4)
-                    .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                        .addGroup(jPanel3Layout.createSequentialGroup()
-                            .addComponent(jLabel1, javax.swing.GroupLayout.PREFERRED_SIZE, 71, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                            .addComponent(bt_newFolder, javax.swing.GroupLayout.PREFERRED_SIZE, 124, javax.swing.GroupLayout.PREFERRED_SIZE))
-                        .addGroup(jPanel3Layout.createSequentialGroup()
-                            .addComponent(jLabel2, javax.swing.GroupLayout.PREFERRED_SIZE, 49, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addGap(41, 41, 41)
-                            .addComponent(bt_newFile, javax.swing.GroupLayout.PREFERRED_SIZE, 120, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addGap(36, 36, 36)
-                            .addComponent(jButton2, javax.swing.GroupLayout.PREFERRED_SIZE, 120, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addGap(36, 36, 36)
-                            .addComponent(jButton1, javax.swing.GroupLayout.PREFERRED_SIZE, 121, javax.swing.GroupLayout.PREFERRED_SIZE))
-                        .addComponent(jScrollPane1, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, 514, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addComponent(jScrollPane2)))
+                    .addGroup(jPanel3Layout.createSequentialGroup()
+                        .addComponent(jLabel1, javax.swing.GroupLayout.PREFERRED_SIZE, 71, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addComponent(bt_newFolder, javax.swing.GroupLayout.PREFERRED_SIZE, 124, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addGroup(jPanel3Layout.createSequentialGroup()
+                        .addComponent(jLabel2, javax.swing.GroupLayout.PREFERRED_SIZE, 49, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(41, 41, 41)
+                        .addComponent(bt_newFile, javax.swing.GroupLayout.PREFERRED_SIZE, 120, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(36, 36, 36)
+                        .addComponent(jButton2, javax.swing.GroupLayout.PREFERRED_SIZE, 120, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(36, 36, 36)
+                        .addComponent(jButton1, javax.swing.GroupLayout.PREFERRED_SIZE, 121, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addComponent(jScrollPane1, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, 514, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jScrollPane2))
                 .addContainerGap(49, Short.MAX_VALUE))
         );
         jPanel3Layout.setVerticalGroup(
@@ -310,6 +297,14 @@ public class TheMainScreenClient extends javax.swing.JFrame {
             }
         });
 
+        btn_Disconnect.setBackground(new java.awt.Color(102, 255, 204));
+        btn_Disconnect.setText("Disconnect");
+        btn_Disconnect.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btn_DisconnectActionPerformed(evt);
+            }
+        });
+
         javax.swing.GroupLayout jPanel4Layout = new javax.swing.GroupLayout(jPanel4);
         jPanel4.setLayout(jPanel4Layout);
         jPanel4Layout.setHorizontalGroup(
@@ -318,7 +313,8 @@ public class TheMainScreenClient extends javax.swing.JFrame {
                 .addContainerGap(34, Short.MAX_VALUE)
                 .addGroup(jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
                     .addComponent(bt_Syn, javax.swing.GroupLayout.DEFAULT_SIZE, 118, Short.MAX_VALUE)
-                    .addComponent(bt_delete, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                    .addComponent(bt_delete, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(btn_Disconnect, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                 .addContainerGap(34, Short.MAX_VALUE))
         );
         jPanel4Layout.setVerticalGroup(
@@ -328,7 +324,9 @@ public class TheMainScreenClient extends javax.swing.JFrame {
                 .addComponent(bt_Syn, javax.swing.GroupLayout.PREFERRED_SIZE, 40, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(32, 32, 32)
                 .addComponent(bt_delete, javax.swing.GroupLayout.PREFERRED_SIZE, 40, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(196, 196, 196))
+                .addGap(30, 30, 30)
+                .addComponent(btn_Disconnect, javax.swing.GroupLayout.PREFERRED_SIZE, 40, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(126, 126, 126))
         );
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
@@ -356,7 +354,6 @@ public class TheMainScreenClient extends javax.swing.JFrame {
     }// </editor-fold>//GEN-END:initComponents
 
     private void bt_newFolderActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_bt_newFolderActionPerformed
-        // TODO add your handling code here:
         String folderName = JOptionPane.showInputDialog(null, "Folder name: ");
         File f;
         tAre_show.append(folderName + "\n");
@@ -370,7 +367,6 @@ public class TheMainScreenClient extends javax.swing.JFrame {
     }//GEN-LAST:event_bt_newFolderActionPerformed
 
     private void bt_newFileActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_bt_newFileActionPerformed
-        // TODO add your handling code here:
         JFileChooser x = new JFileChooser();
         while (true) {
             int returnvalue = x.showOpenDialog(null);
@@ -485,6 +481,16 @@ public class TheMainScreenClient extends javax.swing.JFrame {
         loadFile(tb_file, currentPath);
     }//GEN-LAST:event_jButton2ActionPerformed
 
+    private void btn_DisconnectActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_DisconnectActionPerformed
+        try {
+            server.disConnect(client);
+        } catch (RemoteException ex) {
+            Logger.getLogger(TheMainScreenClient.class.getName()).log(Level.SEVERE, null, ex);
+        } finally {
+            System.exit(0);
+        }
+    }//GEN-LAST:event_btn_DisconnectActionPerformed
+
     public void loadFolder(JTable tb, String ROOT_FILE_PATH) {
         String[] title1 = new String[2];
         title1[0] = "Folder";
@@ -519,8 +525,6 @@ public class TheMainScreenClient extends javax.swing.JFrame {
         title1[3] = "Path";
         DefaultTableModel model = new DefaultTableModel();
         model.setColumnIdentifiers(title1);
-        String[] fileName = new String[100];
-        String[] fileType = new String[100];
         String[] array = new String[100];
         int i = 0;
         SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy");
@@ -540,29 +544,29 @@ public class TheMainScreenClient extends javax.swing.JFrame {
     }
 
     private void stopSync() throws RemoteException {
-        Synchronization.stopsync();
+        this.bt_Syn.setEnabled(false);
+        sync.stopSync();
         if (syncThread.isAlive()) {
-            tAre_show.append("Waiting for thread stop...\n");
             while (syncThread.isAlive()) {
             }
             try {
                 syncThread.join();
             } catch (InterruptedException ex) {
-                ex.printStackTrace();
+                tAre_show.append(("Error stopping syncThread\n"));
             }
         }
+        this.bt_Syn.setEnabled(true);
+
     }
 
-    private static void startSync() throws RemoteException {
-        if (server.connect(client)) {
-            File clientFile = new File(rootFilePath);
+    private void startSync() throws RemoteException {
+            File clientFile = new File(currentPath);
             File serverFile = server.getServerFile();
-            Synchronization sync = new Synchronization(IS_DONE, clientFile, serverFile, client, server);
+            this.sync = new Synchronization(IS_DONE, clientFile, serverFile, client, server);
 
             syncThread = new Thread(sync);
             syncThread.start();
 
-        }
     }
 
     public String getParentFolder(String currentPath) {
@@ -601,24 +605,6 @@ public class TheMainScreenClient extends javax.swing.JFrame {
         return false;
     }
 
-//    public String getPath(String currentPath) {
-//        int endIndex = 0;
-//        for (int i = currentPath.length() - 1; i >= 0; i--) {
-//            if ((int) currentPath.charAt(i) == 92) {
-//                endIndex = i;
-//                break;
-//            }
-//        }
-//        if ((int) currentPath.charAt(endIndex - 1) == 58) {
-//            String checkPath = currentPath.substring(0, endIndex + 1);
-//            return checkPath;
-//        } else {
-//            String checkPath = currentPath.substring(0, endIndex);
-//            return checkPath;
-//        }
-//
-//    }
-
     /**
      * @param args the command line arguments
      */
@@ -647,9 +633,7 @@ public class TheMainScreenClient extends javax.swing.JFrame {
         //</editor-fold>
 
         /* Create and display the form */
-        java.awt.EventQueue.invokeLater(new Runnable() {
-            public void run() {
-            }
+        java.awt.EventQueue.invokeLater(() -> {
         });
     }
 
@@ -658,6 +642,7 @@ public class TheMainScreenClient extends javax.swing.JFrame {
     private javax.swing.JButton bt_delete;
     private javax.swing.JButton bt_newFile;
     private javax.swing.JButton bt_newFolder;
+    private javax.swing.JButton btn_Disconnect;
     private javax.swing.JButton jButton1;
     private javax.swing.JButton jButton2;
     private javax.swing.JLabel jLabel1;
@@ -697,16 +682,5 @@ public class TheMainScreenClient extends javax.swing.JFrame {
 
     public void setTb_folder(JTable tb_folder) {
         this.tb_folder = tb_folder;
-    }
-
-    private static class HierarchyListenerImpl implements HierarchyListener {
-
-        public HierarchyListenerImpl() {
-        }
-
-        @Override
-        public void hierarchyChanged(HierarchyEvent e) {
-            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-        }
     }
 }

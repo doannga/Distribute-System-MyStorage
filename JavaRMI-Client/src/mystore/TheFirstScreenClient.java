@@ -5,7 +5,6 @@
  */
 package mystore;
 
-import java.io.File;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.Inet4Address;
@@ -13,10 +12,11 @@ import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.rmi.Naming;
-import java.rmi.server.RemoteServer;
-import java.rmi.server.ServerNotActiveException;
+import java.rmi.RemoteException;
 import java.text.DecimalFormat;
 import java.util.Enumeration;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
 import org.joda.time.DateTimeUtils;
@@ -24,17 +24,14 @@ import org.joda.time.DateTimeUtils;
 public class TheFirstScreenClient extends javax.swing.JFrame {
 
     private JFileChooser fileChooser;
-    // server
-    private static ServerInterface server;
-    /**
-     * The client.
-     */
-    private static ClientInterface client;
+    private ServerInterface server;
+    private ClientInterface client;
+    private boolean close;
+    
 
-    /**
-     * Creates new form TheFirstScreenClient
-     */
     public TheFirstScreenClient() {
+        close = false;
+
         initComponents();
     }
 
@@ -50,6 +47,7 @@ public class TheFirstScreenClient extends javax.swing.JFrame {
         bt_ChooseFileSyn = new javax.swing.JButton();
         bt_Connect = new javax.swing.JButton();
         jLabel3 = new javax.swing.JLabel();
+        btn_Close = new javax.swing.JButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
@@ -123,6 +121,13 @@ public class TheFirstScreenClient extends javax.swing.JFrame {
         jLabel3.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
         jLabel3.setText("MyStore Client");
 
+        btn_Close.setText("Close");
+        btn_Close.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btn_CloseActionPerformed(evt);
+            }
+        });
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
@@ -135,7 +140,9 @@ public class TheFirstScreenClient extends javax.swing.JFrame {
                     .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
                         .addGap(0, 0, Short.MAX_VALUE)
                         .addComponent(bt_Connect, javax.swing.GroupLayout.PREFERRED_SIZE, 114, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(91, 91, 91))
+                        .addGap(43, 43, 43)
+                        .addComponent(btn_Close, javax.swing.GroupLayout.PREFERRED_SIZE, 114, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(43, 43, 43))
                     .addComponent(jLabel3, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
         );
         layout.setVerticalGroup(
@@ -147,7 +154,9 @@ public class TheFirstScreenClient extends javax.swing.JFrame {
                 .addGap(18, 18, 18)
                 .addComponent(jPanel2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(32, 32, 32)
-                .addComponent(bt_Connect, javax.swing.GroupLayout.PREFERRED_SIZE, 40, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(bt_Connect, javax.swing.GroupLayout.PREFERRED_SIZE, 40, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(btn_Close, javax.swing.GroupLayout.PREFERRED_SIZE, 40, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addContainerGap(53, Short.MAX_VALUE))
         );
 
@@ -174,7 +183,6 @@ public class TheFirstScreenClient extends javax.swing.JFrame {
     }//GEN-LAST:event_bt_ChooseFileSynActionPerformed
 
     // Hàm xác định địa chỉ IP máy chủ địa phương
-    // thật ra chỗ này tớ cũng chưa hiểu lắm
     public static String getIp() {
         String ipAddress = null;
         // net trả về danh sách địa chỉ ip trên 1 máy
@@ -204,92 +212,129 @@ public class TheFirstScreenClient extends javax.swing.JFrame {
         return ipAddress;
     }
 
-    private static void connect() throws Exception {
+    private boolean connect() throws Exception {
         System.getProperty("java.rmi.server.hostname", getIp());
         String url = "rmi://" + "localhost" + ":" + "3000"
                 + "/" + "server";
-        System.out.println(url);
         // sử dụng url để kết nối tới server
         server = (ServerInterface) Naming.lookup(url);
         System.out.println("Connected");
         client = new ClientImpl(InetAddress.getLocalHost());
+
+        if (!server.connect(client)) {
+            JOptionPane.showMessageDialog(null, "Cannot connect");
+            return false;
+        } else if (!server.canWork(client)) { // be pushed to queue but must wait
+            JOptionPane.showMessageDialog(null, "You're pushed to queue. Please wait...");
+            this.bt_Connect.setText("Waiting...");
+            this.bt_Connect.setEnabled(false);
+            (new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        while (!server.canWork(client) && !close) {}
+                    } catch (RemoteException ex) {
+                        Logger.getLogger(TheFirstScreenClient.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                    open();
+                }
+            })).start();
+            return false;
+        }
         System.out.println("IP client" + InetAddress.getLocalHost());
         clockSync();
+        return true;
     }
 
     private static void clockSync() throws Exception {
         String serverIP = tf_IPServer.getText();
-        // Send request
-        DatagramSocket socket = new DatagramSocket();
-        InetAddress address = InetAddress.getByName(serverIP);
-        byte[] buf = new NtpMessage().toByteArray();
-        DatagramPacket packet = new DatagramPacket(buf, buf.length, address,
-                123);
+        try (
+                // Send request
+                DatagramSocket socket = new DatagramSocket()) {
+            InetAddress address = InetAddress.getByName(serverIP);
+            byte[] buf = new NtpMessage().toByteArray();
+            DatagramPacket packet = new DatagramPacket(buf, buf.length, address,
+                    123);
 
-        // Set the transmit timestamp *just* before sending the packet
-        // ToDo: Does this actually improve performance or not?
-        NtpMessage.encodeTimestamp(packet.getData(), 40,
-                (System.currentTimeMillis() / 1000.0) + 2208988800.0);
+            // Set the transmit timestamp *just* before sending the packet
+            // ToDo: Does this actually improve performance or not?
+            NtpMessage.encodeTimestamp(packet.getData(), 40,
+                    (System.currentTimeMillis() / 1000.0) + 2208988800.0);
 
-        socket.send(packet);
+            socket.send(packet);
 
-        // Get response
-        System.out.println("NTP request sent, waiting for response...\n");
-        packet = new DatagramPacket(buf, buf.length);
-        socket.receive(packet);
+            // Get response
+            System.out.println("NTP request sent, waiting for response...\n");
+            packet = new DatagramPacket(buf, buf.length);
+            socket.receive(packet);
 
-        // Immediately record the incoming timestamp
-        double destinationTimestamp = (System.currentTimeMillis() / 1000.0) + 2208988800.0;
+            // Immediately record the incoming timestamp
+            double destinationTimestamp = (System.currentTimeMillis() / 1000.0) + 2208988800.0;
 
-        // Process response
-        NtpMessage msg = new NtpMessage(packet.getData());
+            // Process response
+            NtpMessage msg = new NtpMessage(packet.getData());
 
-        // Corrected, according to RFC2030 errata
-        double roundTripDelay = (destinationTimestamp - msg.originateTimestamp)
-                - (msg.transmitTimestamp - msg.receiveTimestamp);
+            // Corrected, according to RFC2030 errata
+            double roundTripDelay = (destinationTimestamp - msg.originateTimestamp)
+                    - (msg.transmitTimestamp - msg.receiveTimestamp);
 
-        double localClockOffset = ((msg.receiveTimestamp - msg.originateTimestamp) + (msg.transmitTimestamp - destinationTimestamp)) / 2;
+            double localClockOffset = ((msg.receiveTimestamp - msg.originateTimestamp) + (msg.transmitTimestamp - destinationTimestamp)) / 2;
 
-        // Display response
-        System.out.println("NTP server: " + serverIP);
-        System.out.println(msg.toString());
+            // Display response
+            System.out.println("NTP server: " + serverIP);
+            System.out.println(msg.toString());
 
-        System.out.println("Dest. timestamp:     "
-                + NtpMessage.timestampToString(destinationTimestamp));
+            System.out.println("Dest. timestamp:     "
+                    + NtpMessage.timestampToString(destinationTimestamp));
 
-        System.out.println("Round-trip delay: "
-                + new DecimalFormat("0.00").format(roundTripDelay * 1000)
-                + " ms");
+            System.out.println("Round-trip delay: "
+                    + new DecimalFormat("0.00").format(roundTripDelay * 1000)
+                    + " ms");
 
-        System.out.println("Local clock offset: "
-                + new DecimalFormat("0.00").format(localClockOffset * 1000)
-                + " ms");
-        System.out.println("Current time " + DateTimeUtils.currentTimeMillis());
-        DateTimeUtils.setCurrentMillisOffset((long) (localClockOffset * 1000));
-        System.out.println("Current time " + DateTimeUtils.currentTimeMillis());
-
-        socket.close();
+            System.out.println("Local clock offset: "
+                    + new DecimalFormat("0.00").format(localClockOffset * 1000)
+                    + " ms");
+            System.out.println("Current time " + DateTimeUtils.currentTimeMillis());
+            DateTimeUtils.setCurrentMillisOffset((long) (localClockOffset * 1000));
+            System.out.println("Current time " + DateTimeUtils.currentTimeMillis());
+        }
     }
 
+    private void open() {
+        String fileClientPath = fileChooser.getSelectedFile().getAbsolutePath();
+        //String fileClientPath = "C:\\Users\\NgaPC\\Desktop\\client";
+        TheMainScreenClient t = new TheMainScreenClient(fileClientPath, client, server);
+        t.setVisible(true);
+
+        this.setVisible(false);
+    }
+    
     private void bt_ConnectActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_bt_ConnectActionPerformed
         try {
             if (tf_IPServer.getText().equals("")) {
                 JOptionPane.showMessageDialog(bt_Connect, "bạn chưa nhập địa chỉ server", "lỗi kết nối", JOptionPane.ERROR_MESSAGE);
-            } else {
-                connect();
-                String fileClientPath = fileChooser.getSelectedFile().getAbsolutePath();
-                //String fileClientPath = "C:\\Users\\NgaPC\\Desktop\\client";
-                TheMainScreenClient t = new TheMainScreenClient(fileClientPath, client, server);
-                t.setVisible(true);
+            } else if (connect()) {
+                open();
             }
-            this.setVisible(false);
         } catch (Exception e) {
+            System.out.println("Cannot start!");
+            e.printStackTrace();
         }
     }//GEN-LAST:event_bt_ConnectActionPerformed
 
     private void tf_IPServerActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_tf_IPServerActionPerformed
         // TODO add your handling code here:
     }//GEN-LAST:event_tf_IPServerActionPerformed
+
+    private void btn_CloseActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_CloseActionPerformed
+        this.close = true;
+        try {
+            this.server.disConnect(this.client);
+        } catch (RemoteException ex) {
+            Logger.getLogger(TheFirstScreenClient.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        System.exit(0);
+    }//GEN-LAST:event_btn_CloseActionPerformed
 
     /**
      * @param args the command line arguments
@@ -323,6 +368,7 @@ public class TheFirstScreenClient extends javax.swing.JFrame {
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton bt_ChooseFileSyn;
     private javax.swing.JButton bt_Connect;
+    private javax.swing.JButton btn_Close;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel3;

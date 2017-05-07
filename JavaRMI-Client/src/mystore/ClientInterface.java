@@ -10,17 +10,11 @@ import java.rmi.Remote;
 import java.rmi.RemoteException;
 
 public interface ClientInterface extends Remote {
-    
-    
-    //phương thức getAddress() trả về một địa chỉ IP 
+
     public InetAddress getAdress() throws RemoteException;
-    
-    
-    //tạo và thay đổi trạng thái đồng bộ
+
     public void setSynState(int state) throws RemoteException;
-    
-    
-    // Trả về trạng thái đồng bộ
+
     public String getSynState() throws RemoteException;
     
 }
