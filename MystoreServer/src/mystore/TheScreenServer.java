@@ -17,10 +17,6 @@ import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
 import javax.swing.JTextArea;
 
-/**
- *
- * @author NgaPC
- */
 public class TheScreenServer extends javax.swing.JFrame {
 
     private JFileChooser fileChooser;
@@ -28,6 +24,8 @@ public class TheScreenServer extends javax.swing.JFrame {
 
     public TheScreenServer() {
         initComponents();
+        String text = "<html>\r\n NHÓM SINH VIÊN THỰC HIỆN: \r\n<br><br> 1. Trần Văn Dem \r\n<br> 2. Đoàn Thị Thúy Nga \r\n<br> 3. Nguyễn Thị Hồng Thắm \r\n</html>";
+        this.lb_descrip.setText(text);
     }
 
     @SuppressWarnings("unchecked")
@@ -35,15 +33,14 @@ public class TheScreenServer extends javax.swing.JFrame {
     private void initComponents() {
 
         jPanel1 = new javax.swing.JPanel();
+        lb_descrip = new javax.swing.JLabel();
+        lb_getIPServer = new javax.swing.JLabel();
         jPanel2 = new javax.swing.JPanel();
         jLabel1 = new javax.swing.JLabel();
         bt_ChooseFileSyn = new javax.swing.JButton();
         bt_StartSyn = new javax.swing.JButton();
         bt_StopSyn = new javax.swing.JButton();
         jLabel2 = new javax.swing.JLabel();
-        jPanel3 = new javax.swing.JPanel();
-        jScrollPane1 = new javax.swing.JScrollPane();
-        tar_IPClient = new javax.swing.JTextArea();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
@@ -53,11 +50,21 @@ public class TheScreenServer extends javax.swing.JFrame {
         jPanel1.setLayout(jPanel1Layout);
         jPanel1Layout.setHorizontalGroup(
             jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 287, Short.MAX_VALUE)
+            .addGroup(jPanel1Layout.createSequentialGroup()
+                .addContainerGap()
+                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                    .addComponent(lb_descrip, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(lb_getIPServer, javax.swing.GroupLayout.DEFAULT_SIZE, 176, Short.MAX_VALUE))
+                .addContainerGap(11, Short.MAX_VALUE))
         );
         jPanel1Layout.setVerticalGroup(
             jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 0, Short.MAX_VALUE)
+            .addGroup(jPanel1Layout.createSequentialGroup()
+                .addContainerGap()
+                .addComponent(lb_descrip, javax.swing.GroupLayout.PREFERRED_SIZE, 131, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(18, 18, 18)
+                .addComponent(lb_getIPServer, javax.swing.GroupLayout.PREFERRED_SIZE, 25, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
 
         jLabel1.setText("   Choose File:");
@@ -118,27 +125,6 @@ public class TheScreenServer extends javax.swing.JFrame {
         jLabel2.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
         jLabel2.setText("MyStore Server");
 
-        tar_IPClient.setColumns(20);
-        tar_IPClient.setRows(5);
-        jScrollPane1.setViewportView(tar_IPClient);
-
-        javax.swing.GroupLayout jPanel3Layout = new javax.swing.GroupLayout(jPanel3);
-        jPanel3.setLayout(jPanel3Layout);
-        jPanel3Layout.setHorizontalGroup(
-            jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(jPanel3Layout.createSequentialGroup()
-                .addContainerGap()
-                .addComponent(jScrollPane1)
-                .addContainerGap())
-        );
-        jPanel3Layout.setVerticalGroup(
-            jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(jPanel3Layout.createSequentialGroup()
-                .addContainerGap()
-                .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 144, Short.MAX_VALUE)
-                .addContainerGap())
-        );
-
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
@@ -148,8 +134,7 @@ public class TheScreenServer extends javax.swing.JFrame {
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(jPanel2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(jLabel2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(jPanel3, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
+                    .addComponent(jLabel2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -157,10 +142,9 @@ public class TheScreenServer extends javax.swing.JFrame {
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
                 .addContainerGap()
                 .addComponent(jLabel2, javax.swing.GroupLayout.PREFERRED_SIZE, 87, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addGap(36, 36, 36)
                 .addComponent(jPanel2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jPanel3, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addGap(0, 41, Short.MAX_VALUE))
         );
 
         pack();
@@ -200,25 +184,25 @@ public class TheScreenServer extends javax.swing.JFrame {
             }
         });
     }//GEN-LAST:event_bt_StopSynActionPerformed
-//Choose File to Synchronize
+    //Choose File to Synchronize
     private void bt_StartSynActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_bt_StartSynActionPerformed
         try {
             if (bt_ChooseFileSyn.getText().equals("Choose File to Synchronize")) {
-                File defaultFile = new File("C:\\Users\\NgaPC\\Desktop\\server");
+                File defaultFile = new File("C:\\server");
                 if (!defaultFile.exists()) {
-                    // tạo file nếu không có
+                    // create file
                     if (defaultFile.mkdir()) {
                         bt_ChooseFileSyn.setText("C:\\server");
-                        // thông báo tạo thành công
+                        // notification successful
                         JOptionPane.showMessageDialog(null, "Directory created!");
                     } else {
-                        // lý do gì đó khiến nó thất bại
                         JOptionPane.showMessageDialog(null, "Create directory failse");
                     }
                 }
                 // Nếu thư mục tồn tại, trả về địa chỉ ip của máy chủ RMI
-                System.getProperty("java.rmi.server.hostname", getIpServer());
-                System.out.println("" + getIpServer());
+                System.getProperty("java.rmi.server.hostname " + getIpServer());
+                System.out.println("IP server" + getIpServer());
+                lb_getIPServer.setText("IP Sever: " + getIpServer());
                 bt_ChooseFileSyn.setText(defaultFile.getAbsolutePath());
                 // Cài đặt quản lý an ninh mạng
                 /*
@@ -252,8 +236,8 @@ public class TheScreenServer extends javax.swing.JFrame {
             System.out.println("error: " + e.getMessage());
         }
     }//GEN-LAST:event_bt_StartSynActionPerformed
+    
     // Hàm xác định địa chỉ IP máy chủ địa phương
-    // thật ra chỗ này tớ cũng chưa hiểu lắm
     public static String getIpServer() {
         String ipAddress = null;
         // net trả về danh sách địa chỉ ip trên 1 máy
@@ -283,30 +267,8 @@ public class TheScreenServer extends javax.swing.JFrame {
         return ipAddress;
     }
 
-    /**
-     * @param args the command line arguments
-     */
     public static void main(String args[]) {
-        /* Set the Nimbus look and feel */
-        //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">
-        /* If Nimbus (introduced in Java SE 6) is not available, stay with the default look and feel.
-         * For details see http://download.oracle.com/javase/tutorial/uiswing/lookandfeel/plaf.html 
-         */
-        try {
-            for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
-                if ("Nimbus".equals(info.getName())) {
-                    javax.swing.UIManager.setLookAndFeel(info.getClassName());
-                    break;
-                }
-            }
-        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | javax.swing.UnsupportedLookAndFeelException ex) {
-            java.util.logging.Logger.getLogger(TheScreenServer.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        }
-        //</editor-fold>
-        
-        //</editor-fold>
 
-        /* Create and display the form */
         java.awt.EventQueue.invokeLater(() -> {
             new TheScreenServer().setVisible(true);
         });
@@ -320,17 +282,8 @@ public class TheScreenServer extends javax.swing.JFrame {
     private javax.swing.JLabel jLabel2;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JPanel jPanel2;
-    private javax.swing.JPanel jPanel3;
-    private javax.swing.JScrollPane jScrollPane1;
-    private javax.swing.JTextArea tar_IPClient;
+    private javax.swing.JLabel lb_descrip;
+    private javax.swing.JLabel lb_getIPServer;
     // End of variables declaration//GEN-END:variables
 
-    public JTextArea getTar_IPClient() {
-        return tar_IPClient;
-    }
-
-    public void setTar_IPClient(JTextArea tar_IPClient) {
-        this.tar_IPClient = tar_IPClient;
-    }
-    
 }

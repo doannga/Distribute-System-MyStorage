@@ -42,10 +42,6 @@ public class ServerImpl extends UnicastRemoteObject implements ServerInterface{
         return true;
     }
 
-    @Override
-    public void disConnect(ClientInterface clientInt) throws RemoteException {
-  
-    }
 
     @Override
     public void synState(ClientInterface clientInt) throws RemoteException {
@@ -99,10 +95,5 @@ public class ServerImpl extends UnicastRemoteObject implements ServerInterface{
     public InputStream getInputStreamFile(File file) throws Exception {
         return new SerializableInputStream(new FileInputStream(file));
     }
-
-    @Override
-    public ArrayList getConnected() throws RemoteException {
-        return listConnected;
-    }
-    
+  
 }
