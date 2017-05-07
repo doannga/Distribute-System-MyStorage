@@ -14,7 +14,6 @@ import java.net.SocketException;
 import java.util.Enumeration;
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
-import javax.swing.JTextArea;
 
 public class TheScreenServer extends javax.swing.JFrame {
 
