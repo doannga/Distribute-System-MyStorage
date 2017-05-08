@@ -224,23 +224,24 @@ public class TheFirstScreenClient extends javax.swing.JFrame {
         if (!server.connect(client)) {
             JOptionPane.showMessageDialog(null, "Cannot connect");
             return false;
-        } else if (!server.canWork(client)) { // be pushed to queue but must wait
-            JOptionPane.showMessageDialog(null, "You're pushed to queue. Please wait...");
-            this.bt_Connect.setText("Waiting...");
-            this.bt_Connect.setEnabled(false);
-            (new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        while (!server.canWork(client) && !close) {}
-                    } catch (RemoteException ex) {
-                        Logger.getLogger(TheFirstScreenClient.class.getName()).log(Level.SEVERE, null, ex);
-                    }
-                    open();
-                }
-            })).start();
-            return false;
-        }
+        } 
+//        else if (!server.canWork(client)) { // be pushed to queue but must wait
+//            JOptionPane.showMessageDialog(null, "You're pushed to queue. Please wait...");
+//            this.bt_Connect.setText("Waiting...");
+//            this.bt_Connect.setEnabled(false);
+//            (new Thread(new Runnable() {
+//                @Override
+//                public void run() {
+//                    try {
+//                        while (!server.canWork(client) && !close) {}
+//                    } catch (RemoteException ex) {
+//                        Logger.getLogger(TheFirstScreenClient.class.getName()).log(Level.SEVERE, null, ex);
+//                    }
+//                    open();
+//                }
+//            })).start();
+//            return false;
+//        }
         System.out.println("IP client" + InetAddress.getLocalHost());
         clockSync();
         return true;
